@@ -61,6 +61,8 @@ export default function App() {
         throw new Error(await response.text());
       }
 
+      const saved = await response.json();
+
       setForm({
         name: "",
         itemType: "Old mobile phone",
@@ -68,7 +70,7 @@ export default function App() {
         area: "Panvel"
       });
 
-      setMessage("Request submitted. Refreshing saved requests...");
+      setMessage(`Request T2T-${saved.id} saved successfully. Status: ${saved.status}.`);
       await loadRequests();
     } catch (error) {
       setMessage(`Submission failed: ${error.message}`);
@@ -97,7 +99,7 @@ export default function App() {
         throw new Error(await response.text());
       }
 
-      setMessage(`Status updated to ${nextStatus}.`);
+      setMessage(`Request T2T-${request.id} updated to ${nextStatus}.`);
       await loadRequests();
     } catch (error) {
       setMessage(`Status update failed: ${error.message}`);
@@ -121,9 +123,7 @@ export default function App() {
 
       <main className="wrap">
         <section id="home" className="hero">
-          <p className="eyebrow">
-            RESPONSIBLE E-WASTE MANAGEMENT
-          </p>
+          <p className="eyebrow">RESPONSIBLE E-WASTE MANAGEMENT</p>
           <h1>Give electronic waste a better future.</h1>
           <p>
             Trash2Tech helps people learn about e-waste and record
@@ -182,8 +182,7 @@ export default function App() {
         <section id="request">
           <h2>E-Waste Collection Request</h2>
           <p>
-            Submit the form to send a collection request to the
-            Trash2Tech backend.
+            Submit a request to the Trash2Tech backend.
           </p>
 
           <form className="form card" onSubmit={submitRequest}>
