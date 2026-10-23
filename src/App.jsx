@@ -309,6 +309,40 @@ export default function App() {
                 ))}
               </tbody>
             </table>
+            .ewaste-centres {
+  padding: 32px 20px;
+  margin: 24px 0;
+}
+
+.ewaste-centres h2 {
+  margin-bottom: 10px;
+}
+
+.centre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.centre-card {
+  padding: 20px;
+  border: 1px solid #d6e5d7;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #24352a;
+  overflow-wrap: anywhere;
+}
+
+.centre-card h3 {
+  color: #23733d;
+  margin-top: 0;
+}
+
+.centre-card a {
+  color: #1769aa;
+  text-decoration: underline;
+}
           </div>
         </section>
 
