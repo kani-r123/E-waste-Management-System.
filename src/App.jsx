@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
 import "./style.css";
 
-const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const REQUESTS_URL = `${SUPABASE_URL}/rest/v1/collection_requests`;
-
-const headers = {
-  apikey: SUPABASE_KEY,
-  Authorization: `Bearer ${SUPABASE_KEY}`,
-  "Content-Type": "application/json"
-};
+const API_URL =
+  "https://e-waste-management-system-pblc.onrender.com/api/requests";
 
 export default function App() {
   const [requests, setRequests] = useState([]);
@@ -24,23 +17,15 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   async function loadRequests() {
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      setMessage("Database configuration is missing.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch(
-        `${REQUESTS_URL}?select=*&order=created_at.desc`,
-        { headers }
-      );
+      const response = await fetch(API_URL);
 
       if (!response.ok) {
         throw new Error(await response.text());
       }
 
-      setRequests(await response.json());
+      const data = await response.json();
+      setRequests(data);
       setMessage("");
     } catch (error) {
       setMessage(`Unable to load requests: ${error.message}`);
@@ -55,42 +40,26 @@ export default function App() {
 
   async function submitRequest(event) {
     event.preventDefault();
-
-    if (!SUPABASE_URL || !SUPABASE_KEY) {
-      setMessage("Please configure the Supabase URL and publishable key.");
-      return;
-    }
-
     setBusy(true);
-    setMessage("Submitting your collection request...");
+    setMessage("Submitting collection request...");
 
     try {
-      const response = await fetch(REQUESTS_URL, {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
-          ...headers,
-          Prefer: "return=representation"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           name: form.name.trim(),
-          item_type: form.itemType,
+          itemType: form.itemType,
           quantity: Number(form.quantity),
-          area: form.area.trim(),
-          status: "Pending"
+          area: form.area.trim()
         })
       });
 
       if (!response.ok) {
         throw new Error(await response.text());
       }
-
-      const saved = await response.json();
-
-      if (!saved.length) {
-        throw new Error("No saved record was returned.");
-      }
-
-      const savedRequest = saved[0];
 
       setForm({
         name: "",
@@ -99,10 +68,7 @@ export default function App() {
         area: "Panvel"
       });
 
-      setMessage(
-        `Request T2T-${savedRequest.id} was saved successfully. Status: Pending.`
-      );
-
+      setMessage("Request submitted. Refreshing saved requests...");
       await loadRequests();
     } catch (error) {
       setMessage(`Submission failed: ${error.message}`);
@@ -117,12 +83,11 @@ export default function App() {
 
     try {
       const response = await fetch(
-        `${REQUESTS_URL}?id=eq.${request.id}`,
+        `${API_URL}/${request.id}/status`,
         {
-          method: "PATCH",
+          method: "PUT",
           headers: {
-            ...headers,
-            Prefer: "return=minimal"
+            "Content-Type": "application/json"
           },
           body: JSON.stringify({ status: nextStatus })
         }
@@ -132,7 +97,7 @@ export default function App() {
         throw new Error(await response.text());
       }
 
-      setMessage(`Request T2T-${request.id} updated to ${nextStatus}.`);
+      setMessage(`Status updated to ${nextStatus}.`);
       await loadRequests();
     } catch (error) {
       setMessage(`Status update failed: ${error.message}`);
@@ -156,7 +121,9 @@ export default function App() {
 
       <main className="wrap">
         <section id="home" className="hero">
-          <p className="eyebrow">RESPONSIBLE E-WASTE MANAGEMENT</p>
+          <p className="eyebrow">
+            RESPONSIBLE E-WASTE MANAGEMENT
+          </p>
           <h1>Give electronic waste a better future.</h1>
           <p>
             Trash2Tech helps people learn about e-waste and record
@@ -215,8 +182,8 @@ export default function App() {
         <section id="request">
           <h2>E-Waste Collection Request</h2>
           <p>
-            Complete the form below to record a request in the
-            Trash2Tech collection database.
+            Submit the form to send a collection request to the
+            Trash2Tech backend.
           </p>
 
           <form className="form card" onSubmit={submitRequest}>
@@ -227,7 +194,7 @@ export default function App() {
                 onChange={(event) =>
                   setForm({ ...form, name: event.target.value })
                 }
-                placeholder="Enter a test name"
+                placeholder="Enter your name"
                 required
                 maxLength={100}
               />
@@ -295,9 +262,7 @@ export default function App() {
             </button>
           </div>
 
-          <p>
-            Requests below are loaded from the Supabase database.
-          </p>
+          <p>Requests loaded from the Java backend.</p>
 
           {loading && <p>Loading saved requests...</p>}
 
@@ -323,12 +288,14 @@ export default function App() {
                   <tr key={request.id}>
                     <td>T2T-{request.id}</td>
                     <td>{request.name}</td>
-                    <td>{request.item_type}</td>
+                    <td>{request.itemType ?? request.item_type}</td>
                     <td>{request.quantity}</td>
                     <td>{request.area}</td>
                     <td>
-                      <span className={`status ${request.status.toLowerCase()}`}>
-                        {request.status}
+                      <span
+                        className={`status ${(request.status || "Pending").toLowerCase()}`}
+                      >
+                        {request.status || "Pending"}
                       </span>
                     </td>
                     <td>
